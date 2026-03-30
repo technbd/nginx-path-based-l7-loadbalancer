@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureLogin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222222;
+    --border-active: #3a3a3a;
+    --accent: #e8ff47;
+    --accent-dim: #b8cc2a;
+    --text: #e8e8e0;
+    --text-muted: #666660;
+    --text-dim: #444440;
+    --danger: #ff4747;
+    --success: #47ff8a;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, transparent 40%, var(--bg) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    position: relative;
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* corner accents */
+  .card::before, .card::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: var(--accent);
+    border-style: solid;
+  }
+  .card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .card::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+  .card-header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    flex-shrink: 0;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .card-header-text {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .card-header-text strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+
+  .card-body { padding: 32px 28px; }
+
+  .title {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+
+  .field { margin-bottom: 20px; }
+
+  label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 12px 16px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder { color: var(--text-dim); }
+
+  input:focus {
+    border-color: var(--border-active);
+    box-shadow: 0 0 0 1px var(--border-active);
+  }
+
+  input.error-field { border-color: var(--danger); }
+
+  .btn {
+    width: 100%;
+    margin-top: 28px;
+    padding: 14px;
+    background: var(--accent);
+    color: #0a0a0a;
+    border: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn:hover  { background: var(--accent-dim); }
+  .btn:active { transform: scale(0.99); }
+
+  .btn:disabled {
+    background: var(--border-active);
+    color: var(--text-dim);
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .spinner {
+    display: none;
+    width: 14px; height: 14px;
+    border: 2px solid #0a0a0a;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* alert box */
+  .alert {
+    display: none;
+    padding: 12px 16px;
+    margin-top: 20px;
+    border-left: 3px solid;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .alert.danger  { background: rgba(255,71,71,0.06);  border-color: var(--danger);  color: var(--danger); }
+  .alert.success { background: rgba(71,255,138,0.06); border-color: var(--success); color: var(--success); }
+  .alert.warning { background: rgba(232,255,71,0.06); border-color: var(--accent);  color: var(--accent); }
+
+  .alert-code { font-size: 10px; opacity: 0.6; margin-top: 4px; }
+
+  /* rate limit counter */
+  .rl-bar {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .rl-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .rl-track {
+    height: 3px;
+    background: var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rl-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.4s ease, background 0.3s;
+  }
+
+  .rl-fill.warn  { background: #ffaa00; }
+  .rl-fill.crit  { background: var(--danger); }
+
+  /* demo hint */
+  .demo-hint {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+
+  .demo-hint span { color: var(--text-muted); }
+
+  .card-footer {
+    border-top: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.06em;
+  }
+
+  .footer-endpoint {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 3px 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="card">
+    <div class="card-header">
+      <div class="status-dot"></div>
+      <div class="card-header-text">
+        <strong>AUTH GATEWAY</strong>
+        nginx / rate-limited
+      </div>
+    </div>
+
+    <div class="card-body">
+      <h1 class="title">Sign in</h1>
+      <p class="subtitle">Demo login protected by Nginx rate limiting. Max 5 req/min per IP.</p>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="admin" autocomplete="username">
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn" id="loginBtn" onclick="doLogin()">
+        <div class="btn-inner">
+          <div class="spinner" id="spinner"></div>
+          <span id="btnText">Authenticate →</span>
+        </div>
+      </button>
+
+      <div class="alert" id="alertBox">
+        <div id="alertMsg"></div>
+        <div class="alert-code" id="alertCode"></div>
+      </div>
+
+      <div class="rl-bar">
+        <div class="rl-bar-label">
+          <span>Rate limit usage</span>
+          <span id="rlCount">0 / 5 req/min</span>
+        </div>
+        <div class="rl-track">
+          <div class="rl-fill" id="rlFill"></div>
+        </div>
+      </div>
+
+      <p class="demo-hint">Demo credentials: <span>admin</span> / <span>password123</span></p>
+    </div>
+
+    <div class="card-footer">
+      <span class="footer-label">ENDPOINT</span>
+      <span class="footer-endpoint">POST /api/login.php</span>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+  let reqCount = 0;
+  const MAX = 5;
+
+  function setAlert(type, msg, code) {
+    const box = document.getElementById('alertBox');
+    box.className = 'alert ' + type;
+    box.style.display = 'block';
+    document.getElementById('alertMsg').textContent = msg;
+    document.getElementById('alertCode').textContent = code || '';
+  }
+
+  function updateBar(count) {
+    const fill = document.getElementById('rlFill');
+    const label = document.getElementById('rlCount');
+    const pct = Math.min((count / MAX) * 100, 100);
+    fill.style.width = pct + '%';
+    fill.className = 'rl-fill' + (pct >= 100 ? ' crit' : pct >= 60 ? ' warn' : '');
+    label.textContent = count + ' / ' + MAX + ' req/min';
+  }
+
+  async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    const btn = document.getElementById('loginBtn');
+    const spinner = document.getElementById('spinner');
+
+    document.getElementById('alertBox').style.display = 'none';
+    document.getElementById('username').classList.remove('error-field');
+    document.getElementById('password').classList.remove('error-field');
+
+    if (!username || !password) {
+      if (!username) document.getElementById('username').classList.add('error-field');
+      if (!password) document.getElementById('password').classList.add('error-field');
+      setAlert('danger', 'Username and password are required.', 'ERR_VALIDATION');
+      return;
+    }
+
+    btn.disabled = true;
+    spinner.style.display = 'block';
+    document.getElementById('btnText').textContent = 'Authenticating...';
+
+    try {
+      const res = await fetch('/api/login.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      reqCount++;
+      updateBar(reqCount);
+
+      const data = await res.json();
+
+      if (res.status === 429) {
+        setAlert('warning',
+          'Rate limit reached — too many requests. Try again in 1 minute.',
+          'HTTP 429 · Too Many Requests (Nginx limit_req)'
+        );
+      } else if (res.ok && data.success) {
+        setAlert('success',
+          '✓ Authentication successful. Token issued.',
+          'HTTP 200 · Token: ' + data.token
+        );
+        reqCount = 0;
+        updateBar(0);
+      } else {
+        setAlert('danger',
+          data.message || 'Invalid credentials.',
+          'HTTP ' + res.status + ' · ' + (data.error || 'AUTH_FAILED')
+        );
+      }
+    } catch (err) {
+      if (err.message.includes('429') || (err.name === 'TypeError' && reqCount >= MAX)) {
+        setAlert('warning',
+          'Rate limit reached — Nginx rejected this request.',
+          'HTTP 429 · limit_req zone=login burst=2'
+        );
+      } else {
+        setAlert('danger',
+          'Could not reach the server. Is Nginx running?',
+          'ERR_NETWORK · ' + err.message
+        );
+      }
+    }
+
+    btn.disabled = false;
+    spinner.style.display = 'none';
+    document.getElementById('btnText').textContent = 'Authenticate →';
+  }
+
+  // allow Enter key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+</script>
+</body>
+</html>
